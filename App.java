@@ -31,9 +31,11 @@ public class App extends Application
     static int tankAttack = 10;
     static int supportAttack = 5;
     static int attackAttack = 20;
+    static int superAction = 0;
     static Random enemyAction = new Random();
     static boolean taunted = false;
     static boolean atkBuff = false;
+    
     @Override
     public void start(Stage stage) 
     {    
@@ -62,16 +64,22 @@ public class App extends Application
         Button tankEnemy =  new Button("Tank");
         Button supportEnemy =  new Button("Support");
         Button attackEnemy = new Button("Attack");
+        VBox superGauge = new VBox(10);
+        Label superBar = new Label(superAction + "/100");
+        superBar.setFont(Font.font("Arial", FontWeight.NORMAL, 50));
+        superBar.setStyle("-fx-text-fill: black");
 
         contentBox.setTop(healthBars);
         contentBox.setCenter(enemies);
         contentBox.setBottom(actions);
+        contentBox.setLeft(superGauge);
 
         healthBars.getChildren().addAll(playerHealthBar, tankHealthBar, attackHealthBar, supportHealthBar);
         healthBars.setAlignment(Pos.BOTTOM_CENTER);
         actions.setAlignment(Pos.CENTER);
         enemies.getChildren().addAll(tankEnemy, supportEnemy, attackEnemy);
         enemies.setAlignment(Pos.CENTER);
+        superGauge.getChildren().add(superBar);
 
         tankEnemy.setOnAction
         (
@@ -113,17 +121,43 @@ public class App extends Application
                         {
                             Attack(playerBaseDamage);
                             tankHealthBar.setText(tankHealth + "/70");
+                            tankTurn = 1;
+                            supportTurn = 1;
+                            attackTurn = 1;
+                            EnemyActionChoosing();
+                            playerHealthBar.setText(playerHealth + "/100");
+                            tankHealthBar.setText(tankHealth + "/70");
+                            attackHealthBar.setText(attackHealth + "/50");
+                            supportHealthBar.setText(supportHealth + "/25");
                         }
                         else if(choice == 2 && turn == 1)
                         {
                             Attack(playerBaseDamage);
+                            supportHealthBar.setText(supportHealth + "/25");
+                            tankTurn = 1;
+                            supportTurn = 1;
+                            attackTurn = 1;
+                            EnemyActionChoosing();
+                            playerHealthBar.setText(playerHealth + "/100");
+                            tankHealthBar.setText(tankHealth + "/70");
+                            attackHealthBar.setText(attackHealth + "/50");
                             supportHealthBar.setText(supportHealth + "/25");
                         }
                         else if(choice == 3 && turn == 1)
                         {
                             Attack(playerBaseDamage);
                             attackHealthBar.setText(attackHealth + "/50");
+                            tankTurn = 1;
+                            supportTurn = 1;
+                            attackTurn = 1;
+                            EnemyActionChoosing();
+                            playerHealthBar.setText(playerHealth + "/100");
+                            tankHealthBar.setText(tankHealth + "/70");
+                            attackHealthBar.setText(attackHealth + "/50");
+                            supportHealthBar.setText(supportHealth + "/25");
                         }
+                        superAction += 25;
+                        superBar.setText(superAction + "/100");
                     }
                 );
             }
@@ -134,6 +168,18 @@ public class App extends Application
                 specialButton.setMinSize(1000 , 50);
                 specialButton.setFont(Font.font("Arial", FontWeight.NORMAL, 25));
                 actions.getChildren().add(specialButton);
+                specialButton.setOnAction
+                (
+                    event ->
+                    {
+                        playerHealth += 25;
+                        playerHealthBar.setText(playerHealth + "/100");
+                        turn = 0;
+                        tankTurn = 1;
+                        supportHealth = 1;
+                        attackTurn = 1;
+                    }
+                );
             }
             else if(playerAction[i].equalsIgnoreCase("Parry"))
             {
@@ -152,8 +198,6 @@ public class App extends Application
                 actions.getChildren().add(superButton);
             }
         }
-
-        // Set up the window and display it.
         Scene scene = new Scene(contentBox, 1920, 1000);
         stage.setScene(scene);
         stage.setTitle("Not pokemon but better");
@@ -177,7 +221,7 @@ public class App extends Application
     }
     static void EnemyActionChoosing()
     {
-        if(tankTurn == 1 && enemyAction.nextInt(3) == 1)
+        if(tankTurn == 1 && enemyAction.nextInt(2) == 0)
         {
             if(atkBuff)
             {
@@ -189,14 +233,16 @@ public class App extends Application
             {
                 playerHealth -= tankAttack;
             }
-            tankTurn--;
+            tankTurn = 0;
         }
-        else if(tankTurn == 1 && enemyAction.nextInt(3) == 2)
+        else if(tankTurn == 1 && enemyAction.nextInt(2) == 1)
         {
             taunted = true;
+            tankTurn = 0;
         }
-        if(supportTurn == 1 && enemyAction.nextInt(3) == 1)
+        if(supportTurn == 1 && enemyAction.nextInt(2) == 0)
         {
+            
             if(atkBuff)
             {
                 supportAttack *= 2;
@@ -207,8 +253,9 @@ public class App extends Application
             {
                 playerHealth -= supportAttack;
             }
+            supportTurn = 0;
         }
-        else if(supportTurn == 1 && enemyAction.nextInt(3) == 2)
+        else if(supportTurn == 1 && enemyAction.nextInt(2) == 1)
         {
             if(tankHealth < 70 && tankHealth / 70 < attackHealth / 50 && tankHealth / 70 < supportHealth / 25)
             {
@@ -238,8 +285,9 @@ public class App extends Application
             {
                 playerHealth -= supportAttack;
             }
+            supportTurn = 0;
         }
-        if(attackTurn == 1 && enemyAction.nextInt(3) == 1)
+        if(attackTurn == 1 && enemyAction.nextInt(2) == 0)
         {
             if(atkBuff)
             {
@@ -252,12 +300,14 @@ public class App extends Application
             {
                 playerHealth -= attackAttack;
             }
-            
+            attackTurn = 0;
         }
-        else if(attackTurn == 1 && enemyAction.nextInt(3) == 2)
+        else if(attackTurn == 1 && enemyAction.nextInt(2) == 1)
         {
             atkBuff = true;
+            attackTurn = 0;
         }
+        turn = 1;
     }
     public static void main(String[] args) 
     {
