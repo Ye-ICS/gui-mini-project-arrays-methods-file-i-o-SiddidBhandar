@@ -19,7 +19,7 @@ import java.util.Random;
 public class App extends Application 
 {
     static int choice;
-    static int playerHealth = 100;
+    static int playerHealth = 125;
     static int playerBaseDamage = 10;
     static int tankHealth = 70;
     static int attackHealth = 50;
@@ -35,6 +35,12 @@ public class App extends Application
     static Random enemyAction = new Random();
     static boolean taunted = false;
     static boolean atkBuff = false;
+    static boolean tankDead = false;
+    static boolean supportDead = false;
+    static boolean attackDead = false;
+    static Label tankAction = new Label(" ");
+    static Label supportAction =  new Label(" ");
+    static Label attackAction =  new Label(" ");
     
     @Override
     public void start(Stage stage) 
@@ -44,7 +50,7 @@ public class App extends Application
         contentBox.setStyle("-fx-padding: 30;");
         HBox healthBars = new HBox(25);
         VBox actions =  new VBox(10);
-        Label playerHealthBar = new Label(playerHealth + "/100");
+        Label playerHealthBar = new Label(playerHealth + "/125");
         playerHealthBar.setFont(Font.font("Arial", FontWeight.NORMAL, 50));
         playerHealthBar.setStyle("-fx-text-fill: black");
         playerHealthBar.setTranslateX(-300);
@@ -60,6 +66,7 @@ public class App extends Application
         supportHealthBar.setFont(Font.font("Arial", FontWeight.NORMAL, 50));
         supportHealthBar.setStyle("-fx-text-fill: black");
         supportHealthBar.setTranslateX(500);
+        VBox enemyInfo =  new VBox();
         FlowPane enemies = new FlowPane();
         Button tankEnemy =  new Button("Tank");
         Button supportEnemy =  new Button("Support");
@@ -70,13 +77,14 @@ public class App extends Application
         superBar.setStyle("-fx-text-fill: black");
 
         contentBox.setTop(healthBars);
-        contentBox.setCenter(enemies);
+        contentBox.setCenter(enemyInfo);
         contentBox.setBottom(actions);
         contentBox.setLeft(superGauge);
 
         healthBars.getChildren().addAll(playerHealthBar, tankHealthBar, attackHealthBar, supportHealthBar);
         healthBars.setAlignment(Pos.BOTTOM_CENTER);
         actions.setAlignment(Pos.CENTER);
+        enemyInfo.getChildren().addAll(enemies, tankAction, supportAction, attackAction);
         enemies.getChildren().addAll(tankEnemy, supportEnemy, attackEnemy);
         enemies.setAlignment(Pos.CENTER);
         superGauge.getChildren().add(superBar);
@@ -117,44 +125,82 @@ public class App extends Application
                 (
                     event ->
                     {
+                        if(taunted)
+                        {
+                            choice = 1;
+                            taunted = false;
+                        }
                         if(choice == 1 && turn == 1)
                         {
-                            Attack(playerBaseDamage);
-                            tankHealthBar.setText(tankHealth + "/70");
-                            tankTurn = 1;
-                            supportTurn = 1;
-                            attackTurn = 1;
-                            EnemyActionChoosing();
-                            playerHealthBar.setText(playerHealth + "/100");
-                            tankHealthBar.setText(tankHealth + "/70");
-                            attackHealthBar.setText(attackHealth + "/50");
-                            supportHealthBar.setText(supportHealth + "/25");
+                            if(!tankDead)
+                            {
+                                Attack(playerBaseDamage);
+                                tankHealthBar.setText(tankHealth + "/70");
+                                tankTurn = 1;
+                                supportTurn = 1;
+                                attackTurn = 1;
+                                if(tankHealth < 0)
+                                {
+                                    tankHealth = 0;
+                                }
+                                EnemyActionChoosing();
+                                playerHealthBar.setText(playerHealth + "/125");
+                                tankHealthBar.setText(tankHealth + "/70");
+                                attackHealthBar.setText(attackHealth + "/50");
+                                supportHealthBar.setText(supportHealth + "/25");
+                            }
+                            else
+                            {
+                                tankAction.setText("Tank enemy has Died!");
+                            }
                         }
                         else if(choice == 2 && turn == 1)
                         {
-                            Attack(playerBaseDamage);
-                            supportHealthBar.setText(supportHealth + "/25");
-                            tankTurn = 1;
-                            supportTurn = 1;
-                            attackTurn = 1;
-                            EnemyActionChoosing();
-                            playerHealthBar.setText(playerHealth + "/100");
-                            tankHealthBar.setText(tankHealth + "/70");
-                            attackHealthBar.setText(attackHealth + "/50");
-                            supportHealthBar.setText(supportHealth + "/25");
+                            if(!supportDead)
+                            {
+                                Attack(playerBaseDamage);
+                                supportHealthBar.setText(supportHealth + "/25");
+                                tankTurn = 1;
+                                supportTurn = 1;
+                                attackTurn = 1;
+                                if(supportHealth < 0)
+                                {
+                                    supportHealth = 0;
+                                }
+                                EnemyActionChoosing();
+                                playerHealthBar.setText(playerHealth + "/125");
+                                tankHealthBar.setText(tankHealth + "/70");
+                                attackHealthBar.setText(attackHealth + "/50");
+                                supportHealthBar.setText(supportHealth + "/25");
+                            }
+                            else
+                            {
+                                supportAction.setText("Support enemy has Died!");
+                            }
                         }
                         else if(choice == 3 && turn == 1)
                         {
-                            Attack(playerBaseDamage);
-                            attackHealthBar.setText(attackHealth + "/50");
-                            tankTurn = 1;
-                            supportTurn = 1;
-                            attackTurn = 1;
-                            EnemyActionChoosing();
-                            playerHealthBar.setText(playerHealth + "/100");
-                            tankHealthBar.setText(tankHealth + "/70");
-                            attackHealthBar.setText(attackHealth + "/50");
-                            supportHealthBar.setText(supportHealth + "/25");
+                            if(!attackDead)
+                            {
+                                Attack(playerBaseDamage);
+                                attackHealthBar.setText(attackHealth + "/50");
+                                tankTurn = 1;
+                                supportTurn = 1;
+                                attackTurn = 1;
+                                if(attackHealth < 0)
+                                {
+                                    attackHealth = 0;
+                                }
+                                EnemyActionChoosing();
+                                playerHealthBar.setText(playerHealth + "/125");
+                                tankHealthBar.setText(tankHealth + "/70");
+                                attackHealthBar.setText(attackHealth + "/50");
+                                supportHealthBar.setText(supportHealth + "/25");
+                            }
+                            else
+                            {
+                                attackAction.setText("Attack enemy has Died!");
+                            }
                         }
                         superAction += 25;
                         superBar.setText(superAction + "/100");
@@ -173,11 +219,13 @@ public class App extends Application
                     event ->
                     {
                         playerHealth += 25;
-                        playerHealthBar.setText(playerHealth + "/100");
+                        playerHealthBar.setText(playerHealth + "/125");
                         turn = 0;
                         tankTurn = 1;
                         supportHealth = 1;
                         attackTurn = 1;
+                        EnemyActionChoosing();
+                        playerHealthBar.setText(playerHealth + "/125");
                     }
                 );
             }
@@ -221,91 +269,120 @@ public class App extends Application
     }
     static void EnemyActionChoosing()
     {
-        if(tankTurn == 1 && enemyAction.nextInt(2) == 0)
+        if(tankHealth > 0)
         {
-            if(atkBuff)
+            if(tankTurn == 1 && enemyAction.nextInt(2) == 0 && tankHealth > 0)
             {
-                tankAttack *= 2;
-                playerHealth -= tankAttack;
-                tankAttack /= 2;
-            }
-            else
-            {
-                playerHealth -= tankAttack;
-            }
-            tankTurn = 0;
-        }
-        else if(tankTurn == 1 && enemyAction.nextInt(2) == 1)
-        {
-            taunted = true;
-            tankTurn = 0;
-        }
-        if(supportTurn == 1 && enemyAction.nextInt(2) == 0)
-        {
-            
-            if(atkBuff)
-            {
-                supportAttack *= 2;
-                playerHealth -= supportAttack;
-                supportAttack /= 2;
-            }
-            else
-            {
-                playerHealth -= supportAttack;
-            }
-            supportTurn = 0;
-        }
-        else if(supportTurn == 1 && enemyAction.nextInt(2) == 1)
-        {
-            if(tankHealth < 70 && tankHealth / 70 < attackHealth / 50 && tankHealth / 70 < supportHealth / 25)
-            {
-                tankHealth += 20;
-                if(tankHealth > 70)
+                if(atkBuff)
                 {
-                    tankHealth = 70;
+                    tankAttack *= 2;
+                    playerHealth -= tankAttack;
+                    tankAttack /= 2;
                 }
-            }
-            else if(supportHealth < 25 && supportHealth / 25 < attackHealth / 50 && supportHealth / 25 < tankHealth / 70)
-            {
-                supportHealth += 10;
-                if(supportHealth > 25)
+                else
                 {
-                    supportHealth = 25;
+                    playerHealth -= tankAttack;
                 }
+                tankTurn = 0;
+                tankAction.setText("Tank enemy used Attack!");
             }
-            else if(attackHealth < 50 && attackHealth / 50 < tankHealth / 70 && attackHealth / 50 < supportHealth / 25)
+            else if(tankTurn == 1 && enemyAction.nextInt(2) == 1 && tankHealth > 0)
             {
-                attackHealth += 15;
-                if(attackHealth > 50)
+                taunted = true;
+                tankTurn = 0;
+                tankAction.setText("Tank enemy used Taunt!");
+            }   
+        }
+        else
+        {
+            tankAction.setText("Tank enemy has Died!");
+            tankDead = true;
+        }
+        if(supportHealth > 0)
+        {
+            if(supportTurn == 1 && enemyAction.nextInt(2) == 0)
+            {
+                if(atkBuff)
                 {
-                    attackHealth = 50;
+                    supportAttack *= 2;
+                    playerHealth -= supportAttack;
+                    supportAttack /= 2;
                 }
+                else
+                {
+                    playerHealth -= supportAttack;
+                }
+                supportTurn = 0;
+                supportAction.setText("Support enemy used Attack!");
             }
-            else
+            else if(supportTurn == 1 && enemyAction.nextInt(2) == 1)
             {
-                playerHealth -= supportAttack;
+                if(tankHealth < 70 && tankHealth / 70 < attackHealth / 50 && tankHealth / 70 < supportHealth / 25)
+                {
+                    tankHealth += 20;
+                    if(tankHealth > 70)
+                    {
+                        tankHealth = 70;
+                    }
+                }
+                else if(supportHealth < 25 && supportHealth / 25 < attackHealth / 50 && supportHealth / 25 < tankHealth / 70)
+                {
+                    supportHealth += 10;
+                    if(supportHealth > 25)
+                    {
+                        supportHealth = 25;
+                    }
+                }
+                else if(attackHealth < 50 && attackHealth / 50 < tankHealth / 70 && attackHealth / 50 < supportHealth / 25)
+                {
+                    attackHealth += 15;
+                    if(attackHealth > 50)
+                    {
+                        attackHealth = 50;
+                    }
+                }
+                else
+                {
+                    playerHealth -= supportAttack;
+                }
+                supportTurn = 0;
+                supportAction.setText("Support enemy used Heal!");
             }
-            supportTurn = 0;
         }
-        if(attackTurn == 1 && enemyAction.nextInt(2) == 0)
+        else
         {
-            if(atkBuff)
-            {
-                attackAttack *= 2;
-                playerHealth -= attackAttack;
-                attackAttack /= 2;
-                atkBuff = false;
-            }
-            else
-            {
-                playerHealth -= attackAttack;
-            }
-            attackTurn = 0;
+            supportAction.setText("Support enemy has Died!");
+            supportDead = true;
         }
-        else if(attackTurn == 1 && enemyAction.nextInt(2) == 1)
+        if(attackHealth > 0)
         {
-            atkBuff = true;
-            attackTurn = 0;
+            if(attackTurn == 1 && enemyAction.nextInt(2) == 0 && attackHealth > 0)
+            {
+                if(atkBuff)
+                {
+                    attackAttack *= 2;
+                    playerHealth -= attackAttack;
+                    attackAttack /= 2;
+                    atkBuff = false;
+                }
+                else
+                {
+                    playerHealth -= attackAttack;
+                }
+                attackTurn = 0;
+                attackAction.setText("Attack enemy used Attack!");
+            }
+            else if(attackTurn == 1 && enemyAction.nextInt(2) == 1 && attackHealth > 0)
+            {
+                atkBuff = true;
+                attackTurn = 0;
+                attackAction.setText("Attack enemy used Buff!");
+            }
+        }
+        else
+        {
+            attackAction.setText("Attack enemy has Died!");
+            attackDead = true;
         }
         turn = 1;
     }
