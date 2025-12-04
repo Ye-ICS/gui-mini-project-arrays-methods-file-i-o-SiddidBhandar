@@ -41,6 +41,10 @@ public class App extends Application
     static Label tankAction = new Label(" ");
     static Label supportAction =  new Label(" ");
     static Label attackAction =  new Label(" ");
+    static Label playerHealthBar = new Label(playerHealth + "/125");
+    static Label tankHealthBar = new Label(tankHealth + "/70");
+    static Label attackHealthBar = new Label(attackHealth + "/50");
+    static Label supportHealthBar =  new Label(supportHealth + "/25");
     
     @Override
     public void start(Stage stage) 
@@ -50,19 +54,15 @@ public class App extends Application
         contentBox.setStyle("-fx-padding: 30;");
         HBox healthBars = new HBox(25);
         VBox actions =  new VBox(10);
-        Label playerHealthBar = new Label(playerHealth + "/125");
         playerHealthBar.setFont(Font.font("Arial", FontWeight.NORMAL, 50));
         playerHealthBar.setStyle("-fx-text-fill: black");
         playerHealthBar.setTranslateX(-300);
-        Label tankHealthBar = new Label(tankHealth + "/70");
         tankHealthBar.setFont(Font.font("Arial", FontWeight.NORMAL, 50));
         tankHealthBar.setStyle("-fx-text-fill: black");
         tankHealthBar.setTranslateX(500);
-        Label attackHealthBar = new Label(attackHealth + "/50");
         attackHealthBar.setFont(Font.font("Arial", FontWeight.NORMAL, 50));
         attackHealthBar.setStyle("-fx-text-fill: black");
         attackHealthBar.setTranslateX(500);
-        Label supportHealthBar =  new Label(supportHealth + "/25");
         supportHealthBar.setFont(Font.font("Arial", FontWeight.NORMAL, 50));
         supportHealthBar.setStyle("-fx-text-fill: black");
         supportHealthBar.setTranslateX(500);
@@ -75,11 +75,16 @@ public class App extends Application
         Label superBar = new Label(superAction + "/100");
         superBar.setFont(Font.font("Arial", FontWeight.NORMAL, 50));
         superBar.setStyle("-fx-text-fill: black");
+        VBox enemyManuel = new VBox(10);
+        Label tankStats = new Label("Tank HP = 70, Tank Atk = 10. Taunt forces you to attack the tank.");
+        Label supportStats =  new Label("Support HP = 25, Support Atk = 5. Heals the enemy with the lowest amount of HP percentage based on max HP");
+        Label attackStats = new Label("Attack HP = 50, Attack Atk = 20. Buff multiplies the Atk of all enemies by 2");
 
         contentBox.setTop(healthBars);
         contentBox.setCenter(enemyInfo);
         contentBox.setBottom(actions);
         contentBox.setLeft(superGauge);
+        contentBox.setRight(enemyManuel);
 
         healthBars.getChildren().addAll(playerHealthBar, tankHealthBar, attackHealthBar, supportHealthBar);
         healthBars.setAlignment(Pos.BOTTOM_CENTER);
@@ -88,6 +93,7 @@ public class App extends Application
         enemies.getChildren().addAll(tankEnemy, supportEnemy, attackEnemy);
         enemies.setAlignment(Pos.CENTER);
         superGauge.getChildren().add(superBar);
+        enemyManuel.getChildren().addAll(tankStats, supportStats, attackStats);
 
         tankEnemy.setOnAction
         (
@@ -132,77 +138,37 @@ public class App extends Application
                         }
                         if(choice == 1 && turn == 1)
                         {
-                            if(!tankDead)
-                            {
-                                Attack(playerBaseDamage);
-                                tankHealthBar.setText(tankHealth + "/70");
-                                tankTurn = 1;
-                                supportTurn = 1;
-                                attackTurn = 1;
-                                if(tankHealth < 0)
-                                {
-                                    tankHealth = 0;
-                                }
-                                EnemyActionChoosing();
-                                playerHealthBar.setText(playerHealth + "/125");
-                                tankHealthBar.setText(tankHealth + "/70");
-                                attackHealthBar.setText(attackHealth + "/50");
-                                supportHealthBar.setText(supportHealth + "/25");
-                            }
-                            else
-                            {
-                                tankAction.setText("Tank enemy has Died!");
-                            }
+                            setEnemyTurns();
+                            Attack(playerBaseDamage);
+                            checkDeath();
+                            tankHealthBar.setText(tankHealth + "/70");
+                            EnemyActionChoosing();
+                            setHealthBars();
                         }
                         else if(choice == 2 && turn == 1)
                         {
-                            if(!supportDead)
-                            {
-                                Attack(playerBaseDamage);
-                                supportHealthBar.setText(supportHealth + "/25");
-                                tankTurn = 1;
-                                supportTurn = 1;
-                                attackTurn = 1;
-                                if(supportHealth < 0)
-                                {
-                                    supportHealth = 0;
-                                }
-                                EnemyActionChoosing();
-                                playerHealthBar.setText(playerHealth + "/125");
-                                tankHealthBar.setText(tankHealth + "/70");
-                                attackHealthBar.setText(attackHealth + "/50");
-                                supportHealthBar.setText(supportHealth + "/25");
-                            }
-                            else
-                            {
-                                supportAction.setText("Support enemy has Died!");
-                            }
+                            setEnemyTurns();
+                            Attack(playerBaseDamage);
+                            checkDeath();
+                            supportHealthBar.setText(supportHealth + "/25");
+                            EnemyActionChoosing();
+                            setHealthBars();
                         }
                         else if(choice == 3 && turn == 1)
                         {
-                            if(!attackDead)
-                            {
-                                Attack(playerBaseDamage);
-                                attackHealthBar.setText(attackHealth + "/50");
-                                tankTurn = 1;
-                                supportTurn = 1;
-                                attackTurn = 1;
-                                if(attackHealth < 0)
-                                {
-                                    attackHealth = 0;
-                                }
-                                EnemyActionChoosing();
-                                playerHealthBar.setText(playerHealth + "/125");
-                                tankHealthBar.setText(tankHealth + "/70");
-                                attackHealthBar.setText(attackHealth + "/50");
-                                supportHealthBar.setText(supportHealth + "/25");
-                            }
-                            else
-                            {
-                                attackAction.setText("Attack enemy has Died!");
-                            }
+                            setEnemyTurns();
+                            Attack(playerBaseDamage);
+                            checkDeath();
+                            attackHealthBar.setText(attackHealth + "/50");
+                            EnemyActionChoosing();
+                            setHealthBars();
                         }
+                        
                         superAction += 25;
+                        if(superAction > 100)
+                        {
+                            superAction = 100;
+                        }
                         superBar.setText(superAction + "/100");
                     }
                 );
@@ -222,7 +188,7 @@ public class App extends Application
                         playerHealthBar.setText(playerHealth + "/125");
                         turn = 0;
                         tankTurn = 1;
-                        supportHealth = 1;
+                        supportTurn = 1;
                         attackTurn = 1;
                         EnemyActionChoosing();
                         playerHealthBar.setText(playerHealth + "/125");
@@ -244,12 +210,40 @@ public class App extends Application
                 superButton.setMinSize(1000 , 50);
                 superButton.setFont(Font.font("Arial", FontWeight.NORMAL, 25));
                 actions.getChildren().add(superButton);
+                superButton.setOnAction
+                (
+                    event ->
+                    {
+                        if(superAction == 100)
+                        {
+                            superAction = 0;
+                            tankHealth -= 35;
+                            attackHealth -= 25;
+                            supportHealth -= 12;
+                            checkDeath();
+                            setHealthBars();
+                        }
+                    }
+                );
             }
         }
         Scene scene = new Scene(contentBox, 1920, 1000);
         stage.setScene(scene);
         stage.setTitle("Not pokemon but better");
         stage.show();
+    }
+    static void setEnemyTurns()
+    {
+        tankTurn = 1;
+        supportTurn = 1;
+        attackTurn = 1;
+    }
+    static void setHealthBars()
+    {
+        playerHealthBar.setText(playerHealth + "/125");
+        tankHealthBar.setText(tankHealth + "/70");
+        supportHealthBar.setText(supportHealth + "/25");
+        attackHealthBar.setText(attackHealth + "/50");
     }
     static void Attack(int playerDamage)
     {
@@ -264,12 +258,36 @@ public class App extends Application
         else if (choice == 3)
         {
             attackHealth -= playerDamage;
+            
         }
         turn--;
     }
+    static void checkDeath()
+    {
+        if(tankHealth < 0 || tankHealth == 0)
+        {
+            tankHealth = 0;
+            tankDead = true;
+            tankTurn = 0;
+            tankAction.setText("Tank enemy has Died!");
+        }
+        if(supportHealth < 0 || supportHealth == 0)
+        {
+            supportHealth = 0;
+            supportDead = true;
+            supportTurn = 0;
+            supportAction.setText("Support enemy has Died!");
+        }
+        if(attackHealth < 0 || attackHealth == 0)
+        {
+            attackHealth = 0;
+            attackDead = true;
+            attackAction.setText("Attack enemy has Died!");
+        }
+    }
     static void EnemyActionChoosing()
     {
-        if(tankHealth > 0)
+        if(!tankDead)
         {
             if(tankTurn == 1 && enemyAction.nextInt(2) == 0 && tankHealth > 0)
             {
@@ -293,12 +311,7 @@ public class App extends Application
                 tankAction.setText("Tank enemy used Taunt!");
             }   
         }
-        else
-        {
-            tankAction.setText("Tank enemy has Died!");
-            tankDead = true;
-        }
-        if(supportHealth > 0)
+        if(!supportDead)
         {
             if(supportTurn == 1 && enemyAction.nextInt(2) == 0)
             {
@@ -349,12 +362,7 @@ public class App extends Application
                 supportAction.setText("Support enemy used Heal!");
             }
         }
-        else
-        {
-            supportAction.setText("Support enemy has Died!");
-            supportDead = true;
-        }
-        if(attackHealth > 0)
+        if(!attackDead)
         {
             if(attackTurn == 1 && enemyAction.nextInt(2) == 0 && attackHealth > 0)
             {
@@ -378,11 +386,6 @@ public class App extends Application
                 attackTurn = 0;
                 attackAction.setText("Attack enemy used Buff!");
             }
-        }
-        else
-        {
-            attackAction.setText("Attack enemy has Died!");
-            attackDead = true;
         }
         turn = 1;
     }
