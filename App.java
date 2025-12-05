@@ -38,6 +38,7 @@ public class App extends Application
     static boolean tankDead = false;
     static boolean supportDead = false;
     static boolean attackDead = false;
+    static boolean parry = false;
     static Label tankAction = new Label(" ");
     static Label supportAction =  new Label(" ");
     static Label attackAction =  new Label(" ");
@@ -45,7 +46,6 @@ public class App extends Application
     static Label tankHealthBar = new Label(tankHealth + "/70");
     static Label attackHealthBar = new Label(attackHealth + "/50");
     static Label supportHealthBar =  new Label(supportHealth + "/25");
-    
     @Override
     public void start(Stage stage) 
     {    
@@ -144,6 +144,7 @@ public class App extends Application
                             tankHealthBar.setText(tankHealth + "/70");
                             EnemyActionChoosing();
                             setHealthBars();
+                            choice = 0;
                         }
                         else if(choice == 2 && turn == 1)
                         {
@@ -153,6 +154,7 @@ public class App extends Application
                             supportHealthBar.setText(supportHealth + "/25");
                             EnemyActionChoosing();
                             setHealthBars();
+                            choice = 0;
                         }
                         else if(choice == 3 && turn == 1)
                         {
@@ -162,8 +164,8 @@ public class App extends Application
                             attackHealthBar.setText(attackHealth + "/50");
                             EnemyActionChoosing();
                             setHealthBars();
+                            choice = 0;
                         }
-                        
                         superAction += 25;
                         if(superAction > 100)
                         {
@@ -187,9 +189,7 @@ public class App extends Application
                         playerHealth += 25;
                         playerHealthBar.setText(playerHealth + "/125");
                         turn = 0;
-                        tankTurn = 1;
-                        supportTurn = 1;
-                        attackTurn = 1;
+                        setEnemyTurns();
                         EnemyActionChoosing();
                         playerHealthBar.setText(playerHealth + "/125");
                     }
@@ -202,6 +202,17 @@ public class App extends Application
                 parryButton.setMinSize(1000 , 50);
                 parryButton.setFont(Font.font("Arial", FontWeight.NORMAL, 25));
                 actions.getChildren().add(parryButton);
+                parryButton.setOnAction
+                (
+                    event ->
+                    {
+                        parry = true;
+                        setEnemyTurns();
+                        EnemyActionChoosing();
+                        checkDeath();
+                        setHealthBars();
+                    }
+                );
             }
             else if(playerAction[i].equalsIgnoreCase("Super"))
             {
@@ -220,7 +231,9 @@ public class App extends Application
                             tankHealth -= 35;
                             attackHealth -= 25;
                             supportHealth -= 12;
+                            superBar.setText(superAction + "/100");
                             checkDeath();
+                            EnemyActionChoosing();
                             setHealthBars();
                         }
                     }
@@ -291,42 +304,86 @@ public class App extends Application
         {
             if(tankTurn == 1 && enemyAction.nextInt(2) == 0 && tankHealth > 0)
             {
-                if(atkBuff)
+                if(parry && choice == 1)
                 {
-                    tankAttack *= 2;
-                    playerHealth -= tankAttack;
-                    tankAttack /= 2;
+                    tankAction.setText("Tank enemy has been Parried!");
+                    parry = false;
                 }
                 else
                 {
-                    playerHealth -= tankAttack;
+                    if(atkBuff)
+                    {
+                        tankAttack *= 2;
+                        playerHealth -= tankAttack;
+                        tankAttack /= 2;
+                    }
+                    else
+                    {
+                        playerHealth -= tankAttack;
+                    }
+                    tankTurn = 0;
+                    tankAction.setText("Tank enemy used Attack!");  
                 }
-                tankTurn = 0;
-                tankAction.setText("Tank enemy used Attack!");
+                
             }
             else if(tankTurn == 1 && enemyAction.nextInt(2) == 1 && tankHealth > 0)
             {
-                taunted = true;
-                tankTurn = 0;
-                tankAction.setText("Tank enemy used Taunt!");
+                if(taunted)
+                {
+                    if(parry && choice == 1)
+                    {
+                        tankAction.setText("Tank enemy has been Parried!");
+                        parry = false;
+                    }
+                    else
+                    {
+                        if(atkBuff)
+                        {
+                            tankAttack *= 2;
+                            playerHealth -= tankAttack;
+                            tankAttack /= 2;
+                        }
+                        else
+                        {
+                            playerHealth -= tankAttack;
+                        }
+                        tankAction.setText("Tank enemy used Attack!");
+                    }
+                    tankTurn = 0;
+                }
+                else
+                {
+                    taunted = true;
+                    tankTurn = 0;
+                    tankAction.setText("Tank enemy used Taunt!");
+                }
+                
             }   
         }
         if(!supportDead)
         {
             if(supportTurn == 1 && enemyAction.nextInt(2) == 0)
             {
-                if(atkBuff)
+                if(parry && choice == 2)
                 {
-                    supportAttack *= 2;
-                    playerHealth -= supportAttack;
-                    supportAttack /= 2;
+                    supportAction.setText("Support has been Parried!");
+                    parry = false;
                 }
                 else
                 {
-                    playerHealth -= supportAttack;
+                    if(atkBuff)
+                    {
+                        supportAttack *= 2;
+                        playerHealth -= supportAttack;
+                        supportAttack /= 2;
+                    }
+                    else
+                    {
+                        playerHealth -= supportAttack;
+                    }
+                    supportAction.setText("Support enemy used Attack!");
                 }
                 supportTurn = 0;
-                supportAction.setText("Support enemy used Attack!");
             }
             else if(supportTurn == 1 && enemyAction.nextInt(2) == 1)
             {
@@ -354,10 +411,6 @@ public class App extends Application
                         attackHealth = 50;
                     }
                 }
-                else
-                {
-                    playerHealth -= supportAttack;
-                }
                 supportTurn = 0;
                 supportAction.setText("Support enemy used Heal!");
             }
@@ -366,25 +419,58 @@ public class App extends Application
         {
             if(attackTurn == 1 && enemyAction.nextInt(2) == 0 && attackHealth > 0)
             {
-                if(atkBuff)
+                if(parry && choice == 3)
                 {
-                    attackAttack *= 2;
-                    playerHealth -= attackAttack;
-                    attackAttack /= 2;
-                    atkBuff = false;
+                    attackAction.setText("Attack enemy has been Parried!");
+                    parry = false;
+                    if(atkBuff)
+                    {
+                        atkBuff = false;
+                    }
                 }
                 else
                 {
-                    playerHealth -= attackAttack;
+                    if(atkBuff)
+                    {
+                        attackAttack *= 2;
+                        playerHealth -= attackAttack;
+                        attackAttack /= 2;
+                        atkBuff = false;
+                    }
+                    else
+                    {
+                        playerHealth -= attackAttack;
+                    }
+                    attackAction.setText("Attack enemy used Attack!");
                 }
                 attackTurn = 0;
-                attackAction.setText("Attack enemy used Attack!");
             }
             else if(attackTurn == 1 && enemyAction.nextInt(2) == 1 && attackHealth > 0)
             {
-                atkBuff = true;
+                if(parry && choice == 3)
+                {
+                    attackAction.setText("Attack enemy has been Parried!");
+                    parry = false;
+                }
+                else
+                {
+                    if(atkBuff)
+                    {
+                        attackAttack *= 2;
+                        playerHealth -= attackAttack;
+                        attackAttack /= 2;
+                        atkBuff = false;
+                        attackAction.setText("Attack enemy used Attack!");
+                    }
+                    else
+                    {
+                        atkBuff = true;
+                        attackTurn = 0;
+                        attackAction.setText("Attack enemy used Buff!");
+                    }
+                    
+                }
                 attackTurn = 0;
-                attackAction.setText("Attack enemy used Buff!");
             }
         }
         turn = 1;
