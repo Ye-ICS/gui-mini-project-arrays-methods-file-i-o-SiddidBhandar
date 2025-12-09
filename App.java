@@ -13,11 +13,17 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import java.util.Random;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Scanner;
 /**
  * Template JavaFX application.
  */
 public class App extends Application 
 {
+    // setting global variables.
     static int choice;
     static int playerHealth = 125;
     static int playerBaseDamage = 10;
@@ -32,6 +38,8 @@ public class App extends Application
     static int supportAttack = 5;
     static int attackAttack = 20;
     static int superAction = 0;
+    static int wins = 0;
+    static int loss = 0;
     static Random enemyAction = new Random();
     static boolean taunted = false;
     static boolean atkBuff = false;
@@ -46,8 +54,10 @@ public class App extends Application
     static Label tankHealthBar = new Label(tankHealth + "/70");
     static Label attackHealthBar = new Label(attackHealth + "/50");
     static Label supportHealthBar =  new Label(supportHealth + "/25");
+    static Label winsAndLosses = new Label();
+
     @Override
-    public void start(Stage stage) 
+    public void start(Stage stage) throws IOException 
     {    
         // Create components to add.
         BorderPane contentBox = new BorderPane();
@@ -79,22 +89,30 @@ public class App extends Application
         Label tankStats = new Label("Tank HP = 70, Tank Atk = 10. Taunt forces you to attack the tank.");
         Label supportStats =  new Label("Support HP = 25, Support Atk = 5. Heals the enemy with the lowest amount of HP percentage based on max HP");
         Label attackStats = new Label("Attack HP = 50, Attack Atk = 20. Buff multiplies the Atk of all enemies by 2");
-
+        
+        // Create scanner for file I/O.
+        Scanner fin = new Scanner(new FileReader("WinsAndLosses.txt"));
+        winsAndLosses.setText(fin.nextLine() + " " + fin.nextLine());
+        fin.close();
+        
+        // Setting positions of parent components within the root.
         contentBox.setTop(healthBars);
         contentBox.setCenter(enemyInfo);
         contentBox.setBottom(actions);
         contentBox.setLeft(superGauge);
         contentBox.setRight(enemyManuel);
 
+        // Adding child components to parent components.
         healthBars.getChildren().addAll(playerHealthBar, tankHealthBar, attackHealthBar, supportHealthBar);
         healthBars.setAlignment(Pos.BOTTOM_CENTER);
         actions.setAlignment(Pos.CENTER);
-        enemyInfo.getChildren().addAll(enemies, tankAction, supportAction, attackAction);
+        enemyInfo.getChildren().addAll(enemies, tankAction, supportAction, attackAction, winsAndLosses);
         enemies.getChildren().addAll(tankEnemy, supportEnemy, attackEnemy);
         enemies.setAlignment(Pos.CENTER);
         superGauge.getChildren().add(superBar);
         enemyManuel.getChildren().addAll(tankStats, supportStats, attackStats);
 
+        // Basic enemy choosing mechanic.
         tankEnemy.setOnAction
         (
             event -> 
@@ -117,9 +135,12 @@ public class App extends Application
             }
         );
 
+
+        // Creating and adding player actions within the app.
         String[] playerAction = "Attack,Special,Parry,Super".split(",");
         for(int i = 0; i < playerAction.length; i++)
         {
+            // Attack Action.
             if(playerAction[i].equalsIgnoreCase("Attack"))
             {
                 Button attackButton = new Button("Attack");
@@ -131,50 +152,65 @@ public class App extends Application
                 (
                     event ->
                     {
+                        // If player taunted, forced to attack tank.
                         if(taunted)
                         {
                             choice = 1;
                             taunted = false;
                         }
+
+                        // Attacking the chosen enemy depending on choice.
                         if(choice == 1 && turn == 1)
                         {
                             setEnemyTurns();
-                            Attack(playerBaseDamage);
+                            attack(playerBaseDamage);
                             checkDeath();
                             tankHealthBar.setText(tankHealth + "/70");
-                            EnemyActionChoosing();
+                            enemyActionChoosing();
                             setHealthBars();
                             choice = 0;
                         }
                         else if(choice == 2 && turn == 1)
                         {
                             setEnemyTurns();
-                            Attack(playerBaseDamage);
+                            attack(playerBaseDamage);
                             checkDeath();
                             supportHealthBar.setText(supportHealth + "/25");
-                            EnemyActionChoosing();
+                            enemyActionChoosing();
                             setHealthBars();
                             choice = 0;
                         }
                         else if(choice == 3 && turn == 1)
                         {
                             setEnemyTurns();
-                            Attack(playerBaseDamage);
+                            attack(playerBaseDamage);
                             checkDeath();
                             attackHealthBar.setText(attackHealth + "/50");
-                            EnemyActionChoosing();
+                            enemyActionChoosing();
                             setHealthBars();
                             choice = 0;
                         }
+
+                        // Adding super into the super gauge and refreshing.
                         superAction += 25;
                         if(superAction > 100)
                         {
                             superAction = 100;
                         }
                         superBar.setText(superAction + "/100");
+                        // Check if you have won or lost.
+                        try 
+                        {
+                            checkWinLosses();
+                        } 
+                        catch (IOException e) 
+                        {
+                            e.printStackTrace();
+                        }
                     }
                 );
             }
+            // Special/Heal Action.
             else if(playerAction[i].equalsIgnoreCase("Special"))
             {
                 Button specialButton = new Button("Special");
@@ -186,15 +222,25 @@ public class App extends Application
                 (
                     event ->
                     {
+                        // Healing player.
                         playerHealth += 25;
-                        playerHealthBar.setText(playerHealth + "/125");
+                        setHealthBars();
                         turn = 0;
                         setEnemyTurns();
-                        EnemyActionChoosing();
-                        playerHealthBar.setText(playerHealth + "/125");
+                        enemyActionChoosing();
+                        setHealthBars();
+                        try 
+                        {
+                            checkWinLosses();
+                        } 
+                        catch (IOException e) 
+                        {
+                            e.printStackTrace();
+                        }
                     }
                 );
             }
+            // Parry Action.
             else if(playerAction[i].equalsIgnoreCase("Parry"))
             {
                 Button parryButton = new Button("Parry");
@@ -206,14 +252,24 @@ public class App extends Application
                 (
                     event ->
                     {
+                        // Sets parry boolean to true.
                         parry = true;
                         setEnemyTurns();
-                        EnemyActionChoosing();
+                        enemyActionChoosing();
                         checkDeath();
                         setHealthBars();
+                        try 
+                        {
+                            checkWinLosses();
+                        } 
+                        catch (IOException e) 
+                        {
+                            e.printStackTrace();
+                        }
                     }
                 );
             }
+            // Super Action.
             else if(playerAction[i].equalsIgnoreCase("Super"))
             {
                 Button superButton = new Button("Super");
@@ -225,16 +281,26 @@ public class App extends Application
                 (
                     event ->
                     {
+                        // Checks if the super gauge is maxed out, if true, super action is used.
                         if(superAction == 100)
                         {
+                            // Sets super gauge back to 0 and damages all enemies by 50% of their max health.
                             superAction = 0;
                             tankHealth -= 35;
                             attackHealth -= 25;
                             supportHealth -= 12;
                             superBar.setText(superAction + "/100");
                             checkDeath();
-                            EnemyActionChoosing();
+                            enemyActionChoosing();
                             setHealthBars();
+                            try 
+                            {
+                                checkWinLosses();
+                            } 
+                            catch (IOException e) 
+                            {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 );
@@ -245,12 +311,18 @@ public class App extends Application
         stage.setTitle("Not pokemon but better");
         stage.show();
     }
+/**
+ * Sets the enemies turn so they may attack.
+ */
     static void setEnemyTurns()
     {
         tankTurn = 1;
         supportTurn = 1;
         attackTurn = 1;
     }
+/**
+ * Refresh the health bars in the GUI
+ */
     static void setHealthBars()
     {
         playerHealthBar.setText(playerHealth + "/125");
@@ -258,7 +330,10 @@ public class App extends Application
         supportHealthBar.setText(supportHealth + "/25");
         attackHealthBar.setText(attackHealth + "/50");
     }
-    static void Attack(int playerDamage)
+/**
+ * Reduce enemy health by player damage.
+ */
+    static void attack(int playerDamage)
     {
         if(choice == 1)
         {
@@ -275,6 +350,9 @@ public class App extends Application
         }
         turn--;
     }
+/**
+ * Checks if the health conditions are met to consider the enemy dead.
+ */
     static void checkDeath()
     {
         if(tankHealth < 0 || tankHealth == 0)
@@ -298,12 +376,19 @@ public class App extends Application
             attackAction.setText("Attack enemy has Died!");
         }
     }
-    static void EnemyActionChoosing()
+/**
+ * Chooses what enemies' action will be.
+ */
+    static void enemyActionChoosing()
     {
+        // Checks if tank enemy is not dead. 
         if(!tankDead)
         {
+            // Chooses number between 0 and 1.
             if(tankTurn == 1 && enemyAction.nextInt(2) == 0 && tankHealth > 0)
             {
+                // If number is 0, attack the player.
+                // If parry is true, and if player choice is the tank enemy, tank enemy gets parried and will not do any damage.
                 if(parry && choice == 1)
                 {
                     tankAction.setText("Tank enemy has been Parried!");
@@ -311,6 +396,7 @@ public class App extends Application
                 }
                 else
                 {
+                    // If attack buff is true, double tank damage. Else, deal base damage.
                     if(atkBuff)
                     {
                         tankAttack *= 2;
@@ -324,10 +410,11 @@ public class App extends Application
                     tankTurn = 0;
                     tankAction.setText("Tank enemy used Attack!");  
                 }
-                
             }
+            // If number is 1, perform this action.
             else if(tankTurn == 1 && enemyAction.nextInt(2) == 1 && tankHealth > 0)
             {
+                // If player is already taunted, attack instead.
                 if(taunted)
                 {
                     if(parry && choice == 1)
@@ -351,6 +438,7 @@ public class App extends Application
                     }
                     tankTurn = 0;
                 }
+                // Else, taunt the player, forcing them to attack the tank.
                 else
                 {
                     taunted = true;
@@ -360,17 +448,22 @@ public class App extends Application
                 
             }   
         }
+        // Checks if support enemy is not dead, if true, chooses number between 0 and 1
         if(!supportDead)
         {
+            // If number 0, perform this action.
             if(supportTurn == 1 && enemyAction.nextInt(2) == 0)
             {
+                // If parry is true and player choice is support enemy, support enemy parried and will deal no damage.
                 if(parry && choice == 2)
                 {
                     supportAction.setText("Support has been Parried!");
                     parry = false;
                 }
+                // Else, attack and deal damage.
                 else
                 {
+                    // Checks for attack buff, if true, double damage. Else, deal base damage.
                     if(atkBuff)
                     {
                         supportAttack *= 2;
@@ -385,8 +478,10 @@ public class App extends Application
                 }
                 supportTurn = 0;
             }
+            // If number is 1, perform this action.
             else if(supportTurn == 1 && enemyAction.nextInt(2) == 1)
             {
+                // Checks percentages of enemies based on max health, lowest will be prioritized for healing.
                 if(tankHealth < 70 && tankHealth / 70 < attackHealth / 50 && tankHealth / 70 < supportHealth / 25)
                 {
                     tankHealth += 20;
@@ -415,10 +510,13 @@ public class App extends Application
                 supportAction.setText("Support enemy used Heal!");
             }
         }
+        // Checks if attack enemy is not dead. If true, picks number 0 or 1.
         if(!attackDead)
         {
+            // If number is 0, perform this action.
             if(attackTurn == 1 && enemyAction.nextInt(2) == 0 && attackHealth > 0)
             {
+                // Attacks, if parry is true and player choice is attack enemy, attack enemy gets parried and deals no damage.
                 if(parry && choice == 3)
                 {
                     attackAction.setText("Attack enemy has been Parried!");
@@ -428,6 +526,7 @@ public class App extends Application
                         atkBuff = false;
                     }
                 }
+                // Else, attack the enemy, if attack buff is true, deal double damage, else deal base damage.
                 else
                 {
                     if(atkBuff)
@@ -445,6 +544,7 @@ public class App extends Application
                 }
                 attackTurn = 0;
             }
+            // If number is 1, perform this action.
             else if(attackTurn == 1 && enemyAction.nextInt(2) == 1 && attackHealth > 0)
             {
                 if(parry && choice == 3)
@@ -454,6 +554,7 @@ public class App extends Application
                 }
                 else
                 {
+                    // If attack buff already is true, attack instead, else, enable attack buff to true.
                     if(atkBuff)
                     {
                         attackAttack *= 2;
@@ -464,16 +565,46 @@ public class App extends Application
                     }
                     else
                     {
+                        // Attack buff doubles damage of all enemies.
                         atkBuff = true;
                         attackTurn = 0;
                         attackAction.setText("Attack enemy used Buff!");
                     }
-                    
                 }
                 attackTurn = 0;
             }
         }
         turn = 1;
+    }
+/**
+ * Check if you have won or lost after each action is made.
+ */    
+    static void checkWinLosses() throws IOException
+    {
+        // If all enemy health bars are 0, increase wins and save it in text file to be displayed in the app.
+        if(tankHealth == 0 && supportHealth == 0 && attackHealth == 0)
+        {
+            wins++;
+            PrintWriter fileWriter = new PrintWriter(new FileWriter("WinsAndLosses.txt"));
+            fileWriter.println("Wins: " + wins);
+            fileWriter.println("Losses: " + loss);
+            fileWriter.close();
+            Scanner fin = new Scanner(new FileReader("WinsAndLosses.txt"));
+            winsAndLosses.setText(fin.nextLine() + " " + fin.nextLine());
+        }
+        else if (playerHealth <= 0)
+        {
+            playerHealth = 0;
+            setHealthBars();
+            loss++;
+            PrintWriter fileWriter =  new PrintWriter(new FileWriter("WinsAndLosses.txt"));
+            fileWriter.println("Wins: " + wins);
+            fileWriter.println("Losses: " + loss);
+            fileWriter.close();
+            Scanner fin = new Scanner(new FileReader("WinsAndLosses.txt"));
+            winsAndLosses.setText(fin.nextLine() + " " + fin.nextLine());
+            fin.close();
+        }
     }
     public static void main(String[] args) 
     {
