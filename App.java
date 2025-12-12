@@ -47,6 +47,7 @@ public class App extends Application
     static boolean supportDead = false;
     static boolean attackDead = false;
     static boolean parry = false;
+    static boolean dead = false;
     static Label tankAction = new Label(" ");
     static Label supportAction =  new Label(" ");
     static Label attackAction =  new Label(" ");
@@ -160,7 +161,7 @@ public class App extends Application
                         }
 
                         // Attacking the chosen enemy depending on choice.
-                        if(choice == 1 && turn == 1)
+                        if(choice == 1 && turn == 1 && !dead)
                         {
                             setEnemyTurns();
                             attack(playerBaseDamage);
@@ -170,7 +171,7 @@ public class App extends Application
                             setHealthBars();
                             choice = 0;
                         }
-                        else if(choice == 2 && turn == 1)
+                        else if(choice == 2 && turn == 1 && !dead)
                         {
                             setEnemyTurns();
                             attack(playerBaseDamage);
@@ -180,7 +181,7 @@ public class App extends Application
                             setHealthBars();
                             choice = 0;
                         }
-                        else if(choice == 3 && turn == 1)
+                        else if(choice == 3 && turn == 1 && !dead)
                         {
                             setEnemyTurns();
                             attack(playerBaseDamage);
@@ -222,20 +223,23 @@ public class App extends Application
                 (
                     event ->
                     {
-                        // Healing player.
-                        playerHealth += 25;
-                        setHealthBars();
-                        turn = 0;
-                        setEnemyTurns();
-                        enemyActionChoosing();
-                        setHealthBars();
-                        try 
+                        if(!dead)
                         {
-                            checkWinLosses();
-                        } 
-                        catch (IOException e) 
-                        {
-                            e.printStackTrace();
+                            // Healing player.
+                            playerHealth += 25;
+                            setHealthBars();
+                            turn = 0;
+                            setEnemyTurns();
+                            enemyActionChoosing();
+                            setHealthBars();
+                            try 
+                            {
+                                checkWinLosses();
+                            } 
+                            catch (IOException e) 
+                            {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 );
@@ -592,6 +596,7 @@ public class App extends Application
             Scanner fin = new Scanner(new FileReader("WinsAndLosses.txt"));
             winsAndLosses.setText(fin.nextLine() + " " + fin.nextLine());
         }
+        // If player health is 0, increase loses and save it in text file to be displayed in the app.
         else if (playerHealth <= 0)
         {
             playerHealth = 0;
